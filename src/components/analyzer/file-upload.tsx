@@ -23,7 +23,14 @@ export function FileUpload({onFileParse}: FileUploadProps) {
 
   const {getRootProps, getInputProps, isDragActive} = useDropzone({
     onDrop,
-    accept: {'text/csv': ['.csv'], 'application/json': ['.json']},
+    accept: {
+      'text/csv': ['.csv'],
+      'application/json': ['.json'],
+      'application/vnd.ms-excel': ['.xls'],
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': [
+        '.xlsx',
+      ],
+    },
     maxFiles: 1,
     onDragEnter: () => setIsDragging(true),
     onDragLeave: () => setIsDragging(false),
@@ -51,7 +58,7 @@ export function FileUpload({onFileParse}: FileUploadProps) {
           <p className="mt-4 text-lg font-semibold">Drag & drop a file here</p>
           <p className="text-muted-foreground">or click to select a file</p>
           <p className="mt-2 text-xs text-muted-foreground">
-            Supported formats: .csv, .json
+            Supported formats: .csv, .json, .xls, .xlsx
           </p>
         </div>
       </CardContent>

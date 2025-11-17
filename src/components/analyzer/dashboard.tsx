@@ -2,12 +2,13 @@
 
 import {useState, useMemo} from 'react';
 import Papa from 'papaparse';
+import * as XLSX from 'xlsx';
 import {FileUpload} from './file-upload';
 import {SummaryCards} from './summary-cards';
 import {StatusPieChart} from './status-pie-chart';
 import {SourceBarChart} from './source-bar-chart';
 import {LogDataTable} from './log-data-table';
-import {ColumnMapper, type ColumnMapping } from './column-mapper';
+import {ColumnMapper, type ColumnMapping} from './column-mapper';
 import {useToast} from '@/hooks/use-toast';
 import type {DateRange} from 'react-day-picker';
 
@@ -55,18 +56,22 @@ export default function Dashboard() {
 
     reader.onload = event => {
       try {
-        const text = event.target?.result as string;
+        const data = event.target?.result;
         let parsedData: RawEntry[];
         let fileHeaders: string[];
 
         if (fileExtension === 'json') {
-          const data = JSON.parse(text);
-          if (!Array.isArray(data)) {
-            throw new Error('Invalid JSON format. Expected an array of log entries.');
+          const text = new TextDecoder().decode(data as ArrayBuffer);
+          const jsonData = JSON.parse(text);
+          if (!Array.isArray(jsonData)) {
+            throw new Error(
+              'Invalid JSON format. Expected an array of log entries.'
+            );
           }
-          parsedData = data;
-          fileHeaders = data.length > 0 ? Object.keys(data[0]) : [];
+          parsedData = jsonData;
+          fileHeaders = jsonData.length > 0 ? Object.keys(jsonData[0]) : [];
         } else if (fileExtension === 'csv') {
+          const text = new TextDecoder().decode(data as ArrayBuffer);
           const result = Papa.parse<RawEntry>(text, {
             header: true,
             skipEmptyLines: true,
@@ -76,13 +81,19 @@ export default function Dashboard() {
           }
           parsedData = result.data;
           fileHeaders = result.meta.fields || [];
+        } else if (fileExtension === 'xls' || fileExtension === 'xlsx') {
+          const workbook = XLSX.read(data, {type: 'array'});
+          const sheetName = workbook.SheetNames[0];
+          const worksheet = workbook.Sheets[sheetName];
+          parsedData = XLSX.utils.sheet_to_json<RawEntry>(worksheet);
+          fileHeaders = parsedData.length > 0 ? Object.keys(parsedData[0]) : [];
         } else {
           throw new Error(
-            'Unsupported file type. Please upload a CSV or JSON file.'
+            'Unsupported file type. Please upload a CSV, JSON, XLS or XLSX file.'
           );
         }
 
-        if (parsedData.length === 0) {
+        if (parsedData.length === 0 && fileHeaders.length === 0) {
           toast({
             variant: 'destructive',
             title: 'Empty File',
@@ -113,9 +124,16 @@ export default function Dashboard() {
       }
     };
 
-    reader.readAsText(file);
+    if (
+      fileExtension === 'xls' ||
+      fileExtension === 'xlsx'
+    ) {
+      reader.readAsArrayBuffer(file);
+    } else {
+      reader.readAsArrayBuffer(file); // Reading as array buffer for all to unify logic
+    }
   };
-  
+
   const handleMappingComplete = (mapping: ColumnMapping) => {
     const transformedData = rawData.map(rawEntry => {
       return {
@@ -123,15 +141,15 @@ export default function Dashboard() {
         source: rawEntry[mapping.source],
         status: rawEntry[mapping.status],
         message: rawEntry[mapping.message] || '',
-      } as LogEntry
+      } as LogEntry;
     });
     setLogData(transformedData);
     setAppState(AppState.Analyzing);
-     toast({
+    toast({
       title: 'Analysis ready!',
       description: `Your log data has been processed.`,
     });
-  }
+  };
 
   const resetState = () => {
     setAppState(AppState.Uploading);
@@ -158,8 +176,12 @@ export default function Dashboard() {
           entry.message.toLowerCase().includes(messageFilter.toLowerCase()));
       const dateMatch =
         !dateFilter ||
-        (dateFilter.from && !isNaN(entryDate.getTime()) ? entryDate >= dateFilter.from : true) &&
-        (dateFilter.to && !isNaN(entryDate.getTime()) ? entryDate <= dateFilter.to : true);
+        (dateFilter.from && !isNaN(entryDate.getTime())
+          ? entryDate >= dateFilter.from
+          : true) &&
+        (dateFilter.to && !isNaN(entryDate.getTime())
+          ? entryDate <= dateFilter.to
+          : true);
       return sourceMatch && statusMatch && messageMatch && dateMatch;
     });
   }, [logData, sourceFilter, statusFilter, dateFilter, messageFilter]);
@@ -178,7 +200,10 @@ export default function Dashboard() {
   }, [filteredData]);
 
   const sourceOptions = useMemo(
-    () => ['all', ...Array.from(new Set(logData.map(entry => entry.source).filter(Boolean)))],
+    () => [
+      'all',
+      ...Array.from(new Set(logData.map(entry => entry.source).filter(Boolean))),
+    ],
     [logData]
   );
   const statusOptions = ['all', 'success', 'failed', 'warning'];
@@ -188,13 +213,23 @@ export default function Dashboard() {
   }
 
   if (appState === AppState.Mapping) {
-    return <ColumnMapper headers={headers} onMappingComplete={handleMappingComplete} onCancel={resetState} />;
+    return (
+      <ColumnMapper
+        headers={headers}
+        onMappingComplete={handleMappingComplete}
+        onCancel={resetState}
+      />
+    );
   }
 
   if (appState === AppState.Analyzing) {
     return (
       <div className="space-y-6">
-        <SummaryCards summary={summary} fileName={fileName} onReset={resetState} />
+        <SummaryCards
+          summary={summary}
+          fileName={fileName}
+          onReset={resetState}
+        />
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-5">
           <div className="lg:col-span-2">
             <StatusPieChart summary={summary} />
