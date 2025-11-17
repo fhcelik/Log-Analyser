@@ -25,6 +25,7 @@ import {format} from 'date-fns';
 import {cn, exportToCsv} from '@/lib/utils';
 import type {LogEntry} from './dashboard';
 import type {DateRange} from 'react-day-picker';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface LogDataTableProps {
   data: LogEntry[];
@@ -54,6 +55,8 @@ export function LogDataTable({
   const {sourceFilter, statusFilter, dateFilter, messageFilter} = filters;
   const {setSourceFilter, setStatusFilter, setDateFilter, setMessageFilter} =
     setFilters;
+  const isMobile = useIsMobile();
+  const numberOfMonths = isMobile ? 1 : 2;
 
   const handleExport = () => {
     exportToCsv(data, 'etl_log_export.csv');
@@ -152,7 +155,7 @@ export function LogDataTable({
                 defaultMonth={dateFilter?.from}
                 selected={dateFilter}
                 onSelect={setDateFilter}
-                numberOfMonths={2}
+                numberOfMonths={numberOfMonths}
               />
             </PopoverContent>
           </Popover>
