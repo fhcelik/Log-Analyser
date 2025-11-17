@@ -67,10 +67,11 @@ export default function Dashboard() {
           !parsedData.length ||
           !parsedData[0].timestamp ||
           !parsedData[0].source ||
-          !parsedData[0].status
+          !parsedData[0].status ||
+          !parsedData[0].message
         ) {
           throw new Error(
-            'Invalid log format. Required columns: timestamp, source, status.'
+            'Invalid log format. Required columns: timestamp, source, status, message.'
           );
         }
 
