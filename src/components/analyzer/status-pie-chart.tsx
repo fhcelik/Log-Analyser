@@ -57,8 +57,12 @@ export function StatusPieChart({summary}: StatusPieChartProps) {
                 nameKey="name"
                 innerRadius={60}
                 strokeWidth={5}
+                startAngle={90}
+                endAngle={-270}
+                paddingAngle={chartData.length > 1 ? 5 : 0}
                 labelLine={false}
                 label={({
+                  cx,
                   cy,
                   midAngle,
                   innerRadius,
@@ -67,15 +71,16 @@ export function StatusPieChart({summary}: StatusPieChartProps) {
                   index,
                 }) => {
                   const RADIAN = Math.PI / 180;
-                  const radius = 15 + innerRadius + (outerRadius - innerRadius);
-                  const x = cy + radius * Math.cos(-midAngle * RADIAN);
+                  const radius =
+                    innerRadius + (outerRadius - innerRadius) * 0.5 + 15;
+                  const x = cx + radius * Math.cos(-midAngle * RADIAN);
                   const y = cy + radius * Math.sin(-midAngle * RADIAN);
                   return (
                     <text
                       x={x}
                       y={y}
                       className="fill-muted-foreground text-xs"
-                      textAnchor={x > cy ? 'start' : 'end'}
+                      textAnchor={x > cx ? 'start' : 'end'}
                       dominantBaseline="central"
                     >
                       {chartData[index].name} (
