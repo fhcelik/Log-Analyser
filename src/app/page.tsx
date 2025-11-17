@@ -13,7 +13,7 @@ export default function LandingPage() {
       icon: <UploadCloud className="h-8 w-8 text-primary" />,
       title: 'Effortless Upload',
       description:
-        'Simply drag and drop your CSV or JSON log files to get started instantly.',
+        'Simply drag and drop your CSV, JSON, XLS, XLSX, or Numbers log files to get started instantly.',
     },
     {
       icon: <BarChart className="h-8 w-8 text-primary" />,
