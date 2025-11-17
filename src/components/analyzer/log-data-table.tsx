@@ -87,6 +87,14 @@ export function LogDataTable({
         return 'bg-muted text-muted-foreground';
     }
   };
+  
+  const formatTimestamp = (timestamp: string) => {
+    try {
+      return format(new Date(timestamp), "LLL dd, yyyy h:mm a");
+    } catch (error) {
+      return timestamp;
+    }
+  }
 
   return (
     <div className="space-y-4">
@@ -188,7 +196,7 @@ export function LogDataTable({
               data.map((entry, index) => (
                 <TableRow key={index}>
                   <TableCell className="font-mono text-xs">
-                    {new Date(entry.timestamp).toLocaleString()}
+                    {formatTimestamp(entry.timestamp)}
                   </TableCell>
                   <TableCell>{entry.source}</TableCell>
                   <TableCell>
