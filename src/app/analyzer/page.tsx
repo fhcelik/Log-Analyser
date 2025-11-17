@@ -1,4 +1,4 @@
-import {Dashboard} from '@/components/analyzer/dashboard';
+import Dashboard from '@/components/analyzer/dashboard';
 
 export default function AnalyzerPage() {
   return (
