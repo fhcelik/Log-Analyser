@@ -70,13 +70,17 @@ export default function Dashboard() {
           if (result.errors.length > 0) {
             throw new Error(`CSV parsing error: ${result.errors[0].message}`);
           }
-           if (result.meta.fields) {
+          if (result.meta.fields && result.meta.fields.length > 0) {
             const headers = result.meta.fields.map(h => h.toLowerCase());
             if (!requiredColumns.every(col => headers.includes(col))) {
               throw new Error(
                 `Invalid CSV format. Required columns: ${requiredColumns.join(', ')}.`
               );
             }
+          } else {
+             throw new Error(
+                `Invalid CSV format. Required columns: ${requiredColumns.join(', ')}.`
+              );
           }
           parsedData = result.data;
         } else {
