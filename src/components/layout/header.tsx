@@ -1,9 +1,16 @@
+
+'use client';
 import Link from 'next/link';
 import {BarChart3} from 'lucide-react';
 import {ThemeToggle} from '@/components/theme-toggle';
 import {Button} from '@/components/ui/button';
+import {usePathname} from 'next/navigation';
+import {cn} from '@/lib/utils';
 
 export function Header() {
+  const pathname = usePathname();
+  const isAnalyzerPage = pathname === '/analyzer';
+
   return (
     <header className="px-4 lg:px-6 h-16 flex items-center bg-card shadow-sm border-b">
       <Link
@@ -25,7 +32,7 @@ export function Header() {
             Home
           </Link>
         </Button>
-        <Button asChild>
+        <Button asChild disabled={isAnalyzerPage}>
           <Link href="/analyzer">Analyze Logs</Link>
         </Button>
         <ThemeToggle />
