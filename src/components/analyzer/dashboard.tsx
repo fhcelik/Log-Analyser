@@ -81,7 +81,11 @@ export default function Dashboard() {
           }
           parsedData = result.data;
           fileHeaders = result.meta.fields || [];
-        } else if (fileExtension === 'xls' || fileExtension === 'xlsx') {
+        } else if (
+          fileExtension === 'xls' ||
+          fileExtension === 'xlsx' ||
+          fileExtension === 'numbers'
+        ) {
           const workbook = XLSX.read(data, {type: 'array'});
           const sheetName = workbook.SheetNames[0];
           const worksheet = workbook.Sheets[sheetName];
@@ -89,7 +93,7 @@ export default function Dashboard() {
           fileHeaders = parsedData.length > 0 ? Object.keys(parsedData[0]) : [];
         } else {
           throw new Error(
-            'Unsupported file type. Please upload a CSV, JSON, XLS or XLSX file.'
+            'Unsupported file type. Please upload a CSV, JSON, XLS, XLSX or Numbers file.'
           );
         }
 
@@ -126,7 +130,8 @@ export default function Dashboard() {
 
     if (
       fileExtension === 'xls' ||
-      fileExtension === 'xlsx'
+      fileExtension === 'xlsx' ||
+      fileExtension === 'numbers'
     ) {
       reader.readAsArrayBuffer(file);
     } else {

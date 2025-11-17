@@ -30,6 +30,7 @@ export function FileUpload({onFileParse}: FileUploadProps) {
       'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': [
         '.xlsx',
       ],
+      'application/vnd.apple.numbers': ['.numbers'],
     },
     maxFiles: 1,
     onDragEnter: () => setIsDragging(true),
@@ -58,7 +59,7 @@ export function FileUpload({onFileParse}: FileUploadProps) {
           <p className="mt-4 text-lg font-semibold">Drag & drop a file here</p>
           <p className="text-muted-foreground">or click to select a file</p>
           <p className="mt-2 text-xs text-muted-foreground">
-            Supported formats: .csv, .json, .xls, .xlsx
+            Supported formats: .csv, .json, .xls, .xlsx, .numbers
           </p>
         </div>
       </CardContent>
