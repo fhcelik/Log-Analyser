@@ -90,7 +90,11 @@ export function LogDataTable({
   
   const formatTimestamp = (timestamp: string) => {
     try {
-      return format(new Date(timestamp), "LLL dd, yyyy h:mm a");
+      const date = new Date(timestamp);
+      if (isNaN(date.getTime())) {
+        return timestamp;
+      }
+      return format(date, "LLL dd, yyyy h:mm a");
     } catch (error) {
       return timestamp;
     }
