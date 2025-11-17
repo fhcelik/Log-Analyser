@@ -45,9 +45,23 @@ export default function Dashboard() {
       try {
         const text = event.target?.result as string;
         let parsedData: LogEntry[];
+        const requiredColumns = ['timestamp', 'source', 'status'];
 
         if (fileExtension === 'json') {
-          parsedData = JSON.parse(text);
+          const data = JSON.parse(text);
+          if (!Array.isArray(data)) {
+            throw new Error('Invalid JSON format. Expected an array of log entries.');
+          }
+          parsedData = data;
+          if (parsedData.length > 0) {
+            const firstEntryKeys = Object.keys(parsedData[0]);
+            if (!requiredColumns.every(col => firstEntryKeys.includes(col))) {
+               throw new Error(
+                `Invalid JSON format. Required properties: ${requiredColumns.join(', ')}.`
+              );
+            }
+          }
+
         } else if (fileExtension === 'csv') {
           const result = Papa.parse<LogEntry>(text, {
             header: true,
@@ -56,6 +70,14 @@ export default function Dashboard() {
           if (result.errors.length > 0) {
             throw new Error(`CSV parsing error: ${result.errors[0].message}`);
           }
+           if (result.meta.fields) {
+            const headers = result.meta.fields;
+            if (!requiredColumns.every(col => headers.includes(col))) {
+              throw new Error(
+                `Invalid CSV format. Required columns: ${requiredColumns.join(', ')}.`
+              );
+            }
+          }
           parsedData = result.data;
         } else {
           throw new Error(
@@ -63,15 +85,14 @@ export default function Dashboard() {
           );
         }
 
-        if (
-          !parsedData.length ||
-          !parsedData[0].timestamp ||
-          !parsedData[0].source ||
-          !parsedData[0].status
-        ) {
-          throw new Error(
-            'Invalid log format. Required columns: timestamp, source, status.'
-          );
+        if (parsedData.length === 0) {
+          toast({
+            variant: 'destructive',
+            title: 'Empty File',
+            description:
+              'The uploaded file is empty or contains no valid data.',
+          });
+          return;
         }
 
         setLogData(parsedData);
@@ -108,6 +129,9 @@ export default function Dashboard() {
 
   const filteredData = useMemo(() => {
     return logData.filter(entry => {
+      if (!entry.timestamp || !entry.source || !entry.status) {
+        return false;
+      }
       const entryDate = new Date(entry.timestamp);
       const sourceMatch =
         sourceFilter === 'all' || entry.source === sourceFilter;
@@ -119,8 +143,8 @@ export default function Dashboard() {
           entry.message.toLowerCase().includes(messageFilter.toLowerCase()));
       const dateMatch =
         !dateFilter ||
-        (!dateFilter.from || entryDate >= dateFilter.from) &&
-        (!dateFilter.to || entryDate <= dateFilter.to);
+        (dateFilter.from && !isNaN(entryDate.getTime()) ? entryDate >= dateFilter.from : true) &&
+        (dateFilter.to && !isNaN(entryDate.getTime()) ? entryDate <= dateFilter.to : true);
       return sourceMatch && statusMatch && messageMatch && dateMatch;
     });
   }, [logData, sourceFilter, statusFilter, dateFilter, messageFilter]);
@@ -139,7 +163,7 @@ export default function Dashboard() {
   }, [filteredData]);
 
   const sourceOptions = useMemo(
-    () => ['all', ...Array.from(new Set(logData.map(entry => entry.source)))],
+    () => ['all', ...Array.from(new Set(logData.map(entry => entry.source).filter(Boolean)))],
     [logData]
   );
   const statusOptions = ['all', 'success', 'failed', 'warning'];
