@@ -71,7 +71,7 @@ export default function Dashboard() {
             throw new Error(`CSV parsing error: ${result.errors[0].message}`);
           }
           if (result.meta.fields && result.meta.fields.length > 0) {
-            const headers = result.meta.fields.map(h => h.toLowerCase());
+            const headers = result.meta.fields.map(h => h.trim().toLowerCase());
             if (!requiredColumns.every(col => headers.includes(col))) {
               throw new Error(
                 `Invalid CSV format. Required columns: ${requiredColumns.join(', ')}.`
