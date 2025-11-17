@@ -16,11 +16,11 @@ export function Header() {
       <Link
         href="/"
         className="flex items-center justify-center gap-2"
-        aria-label="ETL Insights Analyzer Home"
+        aria-label="Insights Analyzer Home"
       >
         <BarChart3 className="h-6 w-6 text-primary" />
         <span className="font-semibold hidden sm:inline-block">
-          ETL Insights Analyzer
+          Insights Analyzer
         </span>
       </Link>
       <nav className="ml-auto flex gap-2 sm:gap-4 items-center">
@@ -32,7 +32,7 @@ export function Header() {
             Home
           </Link>
         </Button>
-        <Button asChild disabled={isAnalyzerPage}>
+        <Button asChild>
           <Link href="/analyzer">Analyze Logs</Link>
         </Button>
         <ThemeToggle />

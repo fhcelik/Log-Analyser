@@ -44,7 +44,7 @@ export default function LandingPage() {
               <div className="flex flex-col justify-center space-y-4">
                 <div className="space-y-2">
                   <h1 className="text-3xl font-bold tracking-tighter sm:text-5xl xl:text-6xl/none font-headline">
-                    Turn ETL Logs into Actionable Insights
+                    Turn Logs into Actionable Insights
                   </h1>
                   <p className="max-w-[600px] text-muted-foreground md:text-xl">
                     Our analyzer tool transforms raw log files into clear, visual
@@ -85,10 +85,10 @@ export default function LandingPage() {
                   Key Features
                 </div>
                 <h2 className="text-3xl font-bold tracking-tighter sm:text-5xl font-headline">
-                  A Mini-Looker for ETL Diagnostics
+                  A Mini-Looker for Diagnostics
                 </h2>
                 <p className="max-w-[900px] text-muted-foreground md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
-                  Everything you need to quickly debug and monitor your ETL jobs,
+                  Everything you need to quickly debug and monitor your jobs,
                   right in your browser. No setup required.
                 </p>
               </div>

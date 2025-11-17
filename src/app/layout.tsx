@@ -6,8 +6,8 @@ import {Footer} from '@/components/layout/footer';
 import {Toaster} from '@/components/ui/toaster';
 
 export const metadata: Metadata = {
-  title: 'ETL Insights Analyzer',
-  description: 'Turn ETL Logs into Actionable Insights',
+  title: 'Insights Analyzer',
+  description: 'Turn Logs into Actionable Insights',
 };
 
 export default function RootLayout({
