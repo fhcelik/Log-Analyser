@@ -24,15 +24,20 @@ export function Header() {
         </span>
       </Link>
       <nav className="ml-auto flex gap-2 sm:gap-4 items-center">
-        <Button variant="ghost" asChild>
+        <Button
+          variant={pathname === '/' ? 'ghost' : 'ghost'}
+          asChild
+        >
           <Link
-            className="text-sm font-medium hover:underline underline-offset-4"
+            className={cn("text-sm font-medium hover:underline underline-offset-4", {
+                'text-primary underline': pathname === '/'
+            })}
             href="/"
           >
             Home
           </Link>
         </Button>
-        <Button asChild>
+        <Button variant={isAnalyzerPage ? 'default' : 'default'} asChild>
           <Link href="/analyzer">Analyze Logs</Link>
         </Button>
         <ThemeToggle />
