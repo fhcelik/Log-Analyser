@@ -7,6 +7,7 @@ import {SummaryCards} from './summary-cards';
 import {StatusPieChart} from './status-pie-chart';
 import {SourceBarChart} from './source-bar-chart';
 import {LogDataTable} from './log-data-table';
+import {ColumnMapper, type ColumnMapping } from './column-mapper';
 import {useToast} from '@/hooks/use-toast';
 import type {DateRange} from 'react-day-picker';
 
@@ -25,7 +26,18 @@ export interface Summary {
   warning: number;
 }
 
+type RawEntry = Record<string, any>;
+
+enum AppState {
+  Uploading,
+  Mapping,
+  Analyzing,
+}
+
 export default function Dashboard() {
+  const [appState, setAppState] = useState<AppState>(AppState.Uploading);
+  const [rawData, setRawData] = useState<RawEntry[]>([]);
+  const [headers, setHeaders] = useState<string[]>([]);
   const [logData, setLogData] = useState<LogEntry[]>([]);
   const [fileName, setFileName] = useState<string | null>(null);
   const {toast} = useToast();
@@ -44,8 +56,8 @@ export default function Dashboard() {
     reader.onload = event => {
       try {
         const text = event.target?.result as string;
-        let parsedData: LogEntry[];
-        const requiredColumns = ['timestamp', 'source', 'status'];
+        let parsedData: RawEntry[];
+        let fileHeaders: string[];
 
         if (fileExtension === 'json') {
           const data = JSON.parse(text);
@@ -53,36 +65,17 @@ export default function Dashboard() {
             throw new Error('Invalid JSON format. Expected an array of log entries.');
           }
           parsedData = data;
-          if (parsedData.length > 0) {
-            const firstEntryKeys = Object.keys(parsedData[0]);
-            if (!requiredColumns.every(col => firstEntryKeys.includes(col))) {
-               throw new Error(
-                `Invalid JSON format. Required properties: ${requiredColumns.join(', ')}.`
-              );
-            }
-          }
-
+          fileHeaders = data.length > 0 ? Object.keys(data[0]) : [];
         } else if (fileExtension === 'csv') {
-          const result = Papa.parse<LogEntry>(text, {
+          const result = Papa.parse<RawEntry>(text, {
             header: true,
             skipEmptyLines: true,
           });
           if (result.errors.length > 0) {
             throw new Error(`CSV parsing error: ${result.errors[0].message}`);
           }
-          if (result.meta.fields && result.meta.fields.length > 0) {
-            const headers = result.meta.fields.map(h => h.trim().toLowerCase());
-            if (!requiredColumns.every(col => headers.includes(col))) {
-              throw new Error(
-                `Invalid CSV format. Required columns: ${requiredColumns.join(', ')}.`
-              );
-            }
-          } else {
-             throw new Error(
-                `Invalid CSV format. Required columns: ${requiredColumns.join(', ')}.`
-              );
-          }
           parsedData = result.data;
+          fileHeaders = result.meta.fields || [];
         } else {
           throw new Error(
             'Unsupported file type. Please upload a CSV or JSON file.'
@@ -99,11 +92,13 @@ export default function Dashboard() {
           return;
         }
 
-        setLogData(parsedData);
+        setRawData(parsedData);
+        setHeaders(fileHeaders);
         setFileName(file.name);
+        setAppState(AppState.Mapping);
         toast({
-          title: 'File processed successfully!',
-          description: `${file.name} has been loaded and analyzed.`,
+          title: 'File uploaded successfully!',
+          description: `Please map the columns for ${file.name}.`,
         });
       } catch (error: any) {
         console.error('Parsing Error:', error);
@@ -114,15 +109,34 @@ export default function Dashboard() {
             error.message ||
             'Failed to parse the file. Please check the file format and content.',
         });
-        setLogData([]);
-        setFileName(null);
+        resetState();
       }
     };
 
     reader.readAsText(file);
   };
+  
+  const handleMappingComplete = (mapping: ColumnMapping) => {
+    const transformedData = rawData.map(rawEntry => {
+      return {
+        timestamp: rawEntry[mapping.timestamp],
+        source: rawEntry[mapping.source],
+        status: rawEntry[mapping.status],
+        message: rawEntry[mapping.message] || '',
+      } as LogEntry
+    });
+    setLogData(transformedData);
+    setAppState(AppState.Analyzing);
+     toast({
+      title: 'Analysis ready!',
+      description: `Your log data has been processed.`,
+    });
+  }
 
   const resetState = () => {
+    setAppState(AppState.Uploading);
+    setRawData([]);
+    setHeaders([]);
     setLogData([]);
     setFileName(null);
     setSourceFilter('all');
@@ -133,9 +147,6 @@ export default function Dashboard() {
 
   const filteredData = useMemo(() => {
     return logData.filter(entry => {
-      if (!entry.timestamp || !entry.source || !entry.status) {
-        return false;
-      }
       const entryDate = new Date(entry.timestamp);
       const sourceMatch =
         sourceFilter === 'all' || entry.source === sourceFilter;
@@ -172,33 +183,41 @@ export default function Dashboard() {
   );
   const statusOptions = ['all', 'success', 'failed', 'warning'];
 
-  if (logData.length === 0) {
+  if (appState === AppState.Uploading) {
     return <FileUpload onFileParse={handleFileParse} />;
   }
 
-  return (
-    <div className="space-y-6">
-      <SummaryCards summary={summary} fileName={fileName} onReset={resetState} />
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-5">
-        <div className="lg:col-span-2">
-          <StatusPieChart summary={summary} />
+  if (appState === AppState.Mapping) {
+    return <ColumnMapper headers={headers} onMappingComplete={handleMappingComplete} onCancel={resetState} />;
+  }
+
+  if (appState === AppState.Analyzing) {
+    return (
+      <div className="space-y-6">
+        <SummaryCards summary={summary} fileName={fileName} onReset={resetState} />
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-5">
+          <div className="lg:col-span-2">
+            <StatusPieChart summary={summary} />
+          </div>
+          <div className="lg:col-span-3">
+            <SourceBarChart data={filteredData} />
+          </div>
         </div>
-        <div className="lg:col-span-3">
-          <SourceBarChart data={filteredData} />
-        </div>
+        <LogDataTable
+          data={filteredData}
+          filters={{sourceFilter, statusFilter, dateFilter, messageFilter}}
+          setFilters={{
+            setSourceFilter,
+            setStatusFilter,
+            setDateFilter,
+            setMessageFilter,
+          }}
+          sourceOptions={sourceOptions}
+          statusOptions={statusOptions}
+        />
       </div>
-      <LogDataTable
-        data={filteredData}
-        filters={{sourceFilter, statusFilter, dateFilter, messageFilter}}
-        setFilters={{
-          setSourceFilter,
-          setStatusFilter,
-          setDateFilter,
-          setMessageFilter,
-        }}
-        sourceOptions={sourceOptions}
-        statusOptions={statusOptions}
-      />
-    </div>
-  );
+    );
+  }
+
+  return null;
 }
