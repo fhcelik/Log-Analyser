@@ -28,7 +28,9 @@ export function ColumnMapper({ headers, onMappingComplete, onCancel }: ColumnMap
   const { toast } = useToast();
 
   const handleSelectChange = (field: keyof ColumnMapping, value: string) => {
-    setMapping(prev => ({ ...prev, [field]: value }));
+    // Treat the special '__none__' value as an empty string for the mapping.
+    const finalValue = value === '__none__' ? '' : value;
+    setMapping(prev => ({ ...prev, [field]: finalValue }));
   };
 
   const handleSubmit = () => {
@@ -92,7 +94,7 @@ export function ColumnMapper({ headers, onMappingComplete, onCancel }: ColumnMap
                   <SelectValue placeholder="Select a column..." />
                 </SelectTrigger>
                 <SelectContent>
-                   <SelectItem value="">None</SelectItem>
+                   <SelectItem value="__none__">None</SelectItem>
                   {headers.map(header => (
                     <SelectItem key={header} value={header}>
                       {header}
