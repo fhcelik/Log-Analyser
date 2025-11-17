@@ -67,11 +67,10 @@ export default function Dashboard() {
           !parsedData.length ||
           !parsedData[0].timestamp ||
           !parsedData[0].source ||
-          !parsedData[0].status ||
-          !parsedData[0].message
+          !parsedData[0].status
         ) {
           throw new Error(
-            'Invalid log format. Required columns: timestamp, source, status, message.'
+            'Invalid log format. Required columns: timestamp, source, status.'
           );
         }
 
@@ -116,7 +115,8 @@ export default function Dashboard() {
         statusFilter === 'all' || entry.status === statusFilter;
       const messageMatch =
         messageFilter === '' ||
-        entry.message.toLowerCase().includes(messageFilter.toLowerCase());
+        (entry.message &&
+          entry.message.toLowerCase().includes(messageFilter.toLowerCase()));
       const dateMatch =
         !dateFilter ||
         (!dateFilter.from || entryDate >= dateFilter.from) &&
